@@ -1,0 +1,71 @@
+# GitHub Actions workflow to run for Emscripten.
+name: "Emscripten"
+
+on:
+  push: {}
+  pull_request: {}
+  schedule:
+    - cron: "0 0 * * *" # At 00:00 daily.
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: "Emscripten"
+    runs-on: "ubuntu-24.04"
+    if: ${{ github.repository_owner == 'libressl' || github.event_name != 'schedule' }}
+    permissions:
+      contents: read
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Setup emsdk"
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: "3.1.60"
+
+      - name: "Prepare repository"
+        run: ./autogen.sh
+
+      - name: "Configure CMake"
+        run: emcmake cmake -Bbuild
+
+      - name: "Build"
+        run: cmake --build build --config Release
+
+      - name: "Test"
+        run: ctest --test-dir build -C Release --output-on-failure
+
+  # Test ASAN with and without ASM enabled.
+  test-asan:
+    name: "ASAN (no-asm)"
+    runs-on: "ubuntu-24.04"
+    if: ${{ github.repository_owner == 'libressl' || github.event_name != 'schedule' }}
+    permissions:
+      contents: read
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Setup emsdk"
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: "3.1.60"
+
+      - name: "Prepare repository"
+        run: ./autogen.sh
+
+      - name: "Configure CMake"
+        run: emcmake cmake -Bbuild
+        env:
+          CFLAGS: "-gsource-map -fsanitize=address"
+          LDFLAGS: "-fsanitize=address"
+
+      - name: "Build"
+        run: cmake --build build --config Release
+
+      - name: "Test"
+        run: ctest --test-dir build -C Release --output-on-failure

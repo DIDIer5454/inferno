@@ -1,0 +1,79 @@
+# GitHub Actions workflow to run tests on Linux.
+name: "Linux"
+
+on:
+  push: {}
+  pull_request: {}
+  schedule:
+    - cron: "0 0 * * *" # At 00:00 daily.
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.number || github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  # Test against all supported architectures.
+  test:
+    name: "${{ matrix.os }}/${{ matrix.arch }} (${{ matrix.compiler }})"
+    runs-on: "${{ matrix.os }}"
+    if: ${{ github.repository_owner == 'libressl' || github.event_name != 'schedule' }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-22.04", "ubuntu-24.04"]
+        arch: ["native", "arm32", "arm64", "mingw32", "mingw64", "mips32", "mips64"]
+        compiler: ["gcc"]
+        include:
+          - os: "ubuntu-22.04"
+            arch: "native"
+            compiler: "clang"
+          - os: "ubuntu-24.04"
+            arch: "native"
+            compiler: "clang"
+          - os: "ubuntu-24.04" # loong64
+            arch: "loong64"
+            compiler: "gcc"
+          - os: "ubuntu-24.04-arm"
+            arch: "native"
+            compiler: "gcc"
+          - os: "ubuntu-24.04-arm"
+            arch: "native"
+            compiler: "clang"
+
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Run tests"
+        run: ./scripts/test || (status=$?; cat tests/test-suite.log; exit $status)
+        env:
+          ARCH: "${{ matrix.arch }}"
+          CC: "${{ matrix.compiler }}"
+
+  # Test ASAN with and without ASM enabled.
+  test-asan:
+    name: "${{ matrix.os }} - ASAN (${{ matrix.asm == 'ON' && 'asm' || 'no-asm' }})"
+    runs-on: "${{ matrix.os }}"
+    if: ${{ github.repository_owner == 'libressl' || github.event_name != 'schedule' }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        asm: [ON, OFF]
+        os: ["ubuntu-24.04", "ubuntu-24.04-arm"]
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Run tests"
+        run: ./scripts/test
+        env:
+          ARCH: "native"
+          CC: "clang"
+          CFLAGS: "-ggdb -fsanitize=address"
+          LDFLAGS: "-fsanitize=address"
+          ENABLE_ASM: "${{ matrix.asm }}"
+          CTEST_OUTPUT_ON_FAILURE: 1

@@ -1,0 +1,47 @@
+# GitHub Actions workflow to run rust-openssl regress tests.
+name: "rust-openssl"
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *" # At 00:00 daily.
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.number || github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: "Test"
+    runs-on: "ubuntu-24.04"
+    if: ${{ github.repository_owner == 'libressl' || github.event_name != 'schedule' }}
+    permissions:
+      contents: read
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Build LibreSSL"
+        run: |
+          ./autogen.sh
+          ./configure --prefix="${HOME}/opt"
+          make all install
+
+      - name: "Clone rust-openssl"
+        run: |
+          git clone https://github.com/sfackler/rust-openssl.git
+
+      - name: "Run rust-openssl tests"
+        run: |
+          cd rust-openssl
+          # instead of erroring use the last supported version
+          ed -s openssl-sys/build/main.rs <<-EOF
+          /_ => version_error/-1
+          .t.
+          s/(.*=/_ =
+          +1d
+          w
+          q
+          EOF
+          export OPENSSL_DIR=${HOME}/opt LD_LIBRARY_PATH=${HOME}/opt/lib
+          cargo test --verbose

@@ -1,0 +1,49 @@
+--- include/openssl/opensslfeatures.h.orig	Fri Jul 28 06:04:42 2023
++++ include/openssl/opensslfeatures.h	Fri Jul 28 06:09:00 2023
+@@ -8,6 +8,13 @@
+ #define LIBRESSL_HAS_TLS1_3
+ #define LIBRESSL_HAS_DTLS1_2
+ 
++/*
++ * Used for compatibility with compilers lacking __attribute__
++ */
++#if defined(_MSC_VER) && !defined(__clang__) && !defined(__attribute__)
++#define __attribute__(a)
++#endif
++
+ #define OPENSSL_THREADS
+ 
+ #define OPENSSL_NO_BUF_FREELISTS
+--- crypto/crypto_internal.h.orig	Sat Dec 14 14:15:39 2024
++++ crypto/crypto_internal.h	Sat Dec 14 14:15:52 2024
+@@ -15,6 +15,8 @@
+  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  */
+ 
++#include <openssl/opensslfeatures.h>
++
+ #include <endian.h>
+ #include <stddef.h>
+ #include <stdint.h>
+--- tests/parse_test_file.h.orig	Thu Dec 26 01:13:00 2024
++++ tests/parse_test_file.h	Thu Dec 26 01:13:27 2024
+@@ -22,6 +22,8 @@
+ #include <stdint.h>
+ #include <stdio.h>
+ 
++#include <openssl/opensslfeatures.h>
++
+ #include "bytestring.h"
+ 
+ #if defined(__cplusplus)
+--- tests/test.h.orig	Sat May 31 04:48:09 2025
++++ tests/test.h	Sat May 31 04:48:31 2025
+@@ -18,6 +18,8 @@
+ #ifndef HEADER_TEST_H
+ #define HEADER_TEST_H
+ 
++#include <openssl/opensslfeatures.h>
++
+ #include <stddef.h>
+ #include <stdint.h>
+ 

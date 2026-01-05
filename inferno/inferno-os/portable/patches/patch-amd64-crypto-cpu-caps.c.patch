@@ -1,0 +1,20 @@
+--- crypto/arch/amd64/crypto_cpu_caps.c.orig	Sat Dec 14 13:45:16 2024
++++ crypto/arch/amd64/crypto_cpu_caps.c	Sat Dec 14 13:54:06 2024
+@@ -37,7 +37,7 @@ cpuid(uint32_t eax, uint32_t *out_eax, uint32_t *out_e
+ {
+ 	uint32_t ebx = 0, ecx = 0, edx = 0;
+ 
+-#ifndef OPENSSL_NO_ASM
++#if defined(__GNUC__) && !defined(OPENSSL_NO_ASM)
+ 	__asm__ ("cpuid": "+a"(eax), "+b"(ebx), "+c"(ecx), "+d"(edx));
+ #else
+ 	eax = 0;
+@@ -58,7 +58,7 @@ xgetbv(uint32_t ecx, uint32_t *out_eax, uint32_t *out_
+ {
+ 	uint32_t eax = 0, edx = 0;
+ 
+-#ifndef OPENSSL_NO_ASM
++#if defined(__GNUC__) && !defined(OPENSSL_NO_ASM)
+ 	__asm__ ("xgetbv": "+a"(eax), "+c"(ecx), "+d"(edx));
+ #endif
+ 

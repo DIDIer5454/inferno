@@ -1,0 +1,15 @@
+uid_t can be 64-bit
+
+--- tls/tls_config.c.orig	2024-11-02 21:19:47.090322191 +0100
++++ tls/tls_config.c	2024-11-02 21:38:22.527071689 +0100
+@@ -742,8 +742,8 @@
+ 
+ 	if (sb.st_uid != getuid()) {
+ 		tls_config_set_errorx(config, TLS_ERROR_UNKNOWN,
+-		    "session file has incorrect owner (uid %u != %u)",
+-		    sb.st_uid, getuid());
++		    "session file has incorrect owner (uid %llu != %llu)",
++		    (unsigned long long)sb.st_uid, (unsigned long long)getuid());
+ 		return (-1);
+ 	}
+ 	mugo = sb.st_mode & (S_IRWXU|S_IRWXG|S_IRWXO);
