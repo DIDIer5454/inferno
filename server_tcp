@@ -1,0 +1,15 @@
+#!dis/sh
+ndb/cs
+<>[3]/net/tcp/clone{
+	<>[4]/net/tcp/0/ctl{
+	echo 'announce 127.0.0.1!9000' >[1=4]
+	echo 'port ouvert, en attente de connexion...'
+		<>[5]/net/tcp/0/listen{
+		echo 'got connection from' `{cat net/tcp/1/remote}
+		<>[6]/net/tcp/1/data{
+		echo 'bienvenue sur le serveur' >[1=6]
+		cat <[0=6] 
+		}
+	}
+	}
+}
