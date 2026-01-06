@@ -1,0 +1,12 @@
+#!dis/sh
+ndb/cs
+<>[3]/net/tcp/clone{
+	<>[3]/net/tcp/0/ctl{
+	echo 'connect 127.0.0.1!9000 2000' >[1=3]
+		<>[3]/net/tcp/0/data{
+		echo 'Coucou je mappelle client' >[1=3]
+		cat <[0=3]  
+		}
+	echo 'hangup' >[1=3]
+	}
+}
